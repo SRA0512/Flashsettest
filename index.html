@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>ISEF Flashcards — Scarlett Asselta</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&display=swap');
+:root{
+  --bg:#0a0e1a;--surface:#111827;--surface2:#1a2235;--border:#2a3550;
+  --accent:#00d4ff;--accent2:#ff6b35;--accent3:#7c3aed;
+  --green:#10b981;--red:#ef4444;--yellow:#f59e0b;
+  --text:#e2e8f0;--muted:#64748b;
+  --mono:'Space Mono',monospace;--display:'Syne',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{background:var(--bg);color:var(--text);font-family:var(--mono);min-height:100vh;overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(0,212,255,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,212,255,.03) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0}
+
+/* SCREEN SYSTEM */
+.screen{display:none;min-height:100vh;position:relative;z-index:1}
+.screen.active{display:flex;flex-direction:column}
+
+/* ===== SCREEN 1: HOME ===== */
+#home{align-items:center;justify-content:center;padding:40px 24px;text-align:center}
+.home-badge{font-size:11px;letter-spacing:.3em;color:var(--accent);text-transform:uppercase;margin-bottom:16px}
+.home-title{font-family:var(--display);font-size:clamp(32px,8vw,56px);font-weight:800;line-height:1.0;margin-bottom:8px}
+.home-title .line1{background:linear-gradient(135deg,#00d4ff,#7c3aed);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.home-title .line2{color:#fff}
+.home-sub{font-size:13px;color:var(--muted);margin-bottom:40px;line-height:1.7;max-width:340px}
+
+.deck-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;width:100%;max-width:480px;margin-bottom:32px}
+.deck-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:20px 16px;cursor:pointer;transition:all .2s;text-align:left;position:relative;overflow:hidden}
+.deck-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
+.deck-card.d0::before{background:linear-gradient(90deg,var(--accent),var(--accent3))}
+.deck-card.d1::before{background:linear-gradient(90deg,var(--accent2),var(--yellow))}
+.deck-card.d2::before{background:linear-gradient(90deg,var(--accent3),var(--accent))}
+.deck-card.d3::before{background:linear-gradient(90deg,var(--green),var(--accent))}
+.deck-card.d4::before{background:linear-gradient(90deg,var(--yellow),var(--accent2))}
+.deck-card.d5::before{background:linear-gradient(90deg,var(--red),var(--accent3))}
+.deck-card:hover{transform:translateY(-2px);border-color:var(--accent)}
+.deck-icon{font-size:28px;margin-bottom:10px;display:block}
+.deck-name{font-family:var(--display);font-size:14px;font-weight:700;color:#fff;margin-bottom:4px;line-height:1.2}
+.deck-count{font-size:11px;color:var(--muted)}
+.deck-prog{height:3px;background:var(--border);border-radius:99px;margin-top:10px;overflow:hidden}
+.deck-prog-fill{height:100%;background:var(--green);border-radius:99px;transition:width .4s}
+
+.stats-row{display:flex;gap:24px;justify-content:center;margin-bottom:32px}
+.stat{text-align:center}
+.stat-val{font-family:var(--display);font-size:28px;font-weight:800;color:var(--accent)}
+.stat-label{font-size:10px;color:var(--muted);letter-spacing:.15em;text-transform:uppercase;margin-top:2px}
+
+.review-btn{background:var(--accent2);color:#fff;border:none;border-radius:10px;padding:14px 28px;font-family:var(--display);font-size:15px;font-weight:700;cursor:pointer;transition:all .2s;margin-bottom:12px;display:none}
+.review-btn:hover{opacity:.85;transform:translateY(-1px)}
+
+/* ===== SCREEN 2: STUDY ===== */
+#study{padding:0}
+.study-header{padding:20px 24px 16px;display:flex;align-items:center;gap:16px;border-bottom:1px solid var(--border);background:var(--surface)}
+.back-btn{background:none;border:1px solid var(--border);border-radius:8px;padding:8px 14px;color:var(--muted);font-family:var(--mono);font-size:12px;cursor:pointer;transition:all .2s;flex-shrink:0}
+.back-btn:hover{border-color:var(--accent);color:var(--accent)}
+.study-info{flex:1}
+.study-deck-name{font-family:var(--display);font-size:16px;font-weight:700;color:#fff}
+.study-progress-text{font-size:11px;color:var(--muted);margin-top:2px}
+.study-prog-track{height:4px;background:var(--border);border-radius:99px;overflow:hidden;margin-top:8px}
+.study-prog-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent3));border-radius:99px;transition:width .3s}
+
+.card-area{flex:1;display:flex;align-items:center;justify-content:center;padding:24px;perspective:1000px}
+
+/* FLIP CARD */
+.flip-wrap{width:100%;max-width:480px;cursor:pointer;position:relative}
+.flip-inner{position:relative;transition:transform .5s cubic-bezier(.4,0,.2,1);transform-style:preserve-3d;min-height:320px}
+.flip-wrap.flipped .flip-inner{transform:rotateY(180deg)}
+.flip-face{position:absolute;width:100%;backface-visibility:hidden;-webkit-backface-visibility:hidden;border-radius:20px;padding:32px 28px;min-height:320px;display:flex;flex-direction:column}
+.flip-front{background:var(--surface);border:1px solid var(--border)}
+.flip-front::before{content:'';position:absolute;top:0;left:0;right:0;height:4px;border-radius:20px 20px 0 0;background:linear-gradient(90deg,var(--accent),var(--accent3))}
+.flip-back{background:var(--surface2);border:1px solid var(--border);transform:rotateY(180deg)}
+.flip-back::before{content:'';position:absolute;top:0;left:0;right:0;height:4px;border-radius:20px 20px 0 0;background:linear-gradient(90deg,var(--green),var(--accent))}
+
+.card-category{font-size:10px;letter-spacing:.25em;color:var(--accent);text-transform:uppercase;margin-bottom:16px}
+.card-question{font-family:var(--display);font-size:clamp(18px,4vw,24px);font-weight:700;color:#fff;line-height:1.3;flex:1;display:flex;align-items:center}
+.tap-hint{font-size:11px;color:var(--muted);margin-top:20px;display:flex;align-items:center;gap:6px}
+.tap-hint::before{content:'👆';font-size:14px}
+
+.card-answer-label{font-size:10px;letter-spacing:.25em;color:var(--green);text-transform:uppercase;margin-bottom:14px}
+.card-answer{font-size:13px;line-height:1.8;color:var(--text);flex:1;overflow-y:auto}
+.card-answer strong{color:var(--accent)}
+.card-answer em{color:var(--accent2);font-style:normal}
+.card-answer .formula{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 14px;margin:10px 0;font-size:12px;color:#a5f3fc;font-family:var(--mono);line-height:1.8}
+.card-answer .key{background:rgba(0,212,255,.08);border-left:3px solid var(--accent);padding:8px 12px;border-radius:0 6px 6px 0;margin:10px 0;font-size:12px;line-height:1.6}
+
+/* RATING BUTTONS */
+.rating-area{padding:20px 24px;display:flex;gap:10px;border-top:1px solid var(--border);background:var(--surface)}
+.rating-label{font-size:10px;color:var(--muted);letter-spacing:.15em;text-transform:uppercase;text-align:center;margin-bottom:10px;width:100%}
+.rate-btn{flex:1;border:none;border-radius:10px;padding:14px 8px;font-family:var(--display);font-size:13px;font-weight:700;cursor:pointer;transition:all .2s;display:flex;flex-direction:column;align-items:center;gap:4px}
+.rate-btn .rate-icon{font-size:20px}
+.rate-btn .rate-text{font-size:10px;letter-spacing:.05em}
+.rate-btn.again{background:rgba(239,68,68,.15);color:var(--red);border:1px solid rgba(239,68,68,.3)}
+.rate-btn.again:hover{background:rgba(239,68,68,.25)}
+.rate-btn.hard{background:rgba(245,158,11,.1);color:var(--yellow);border:1px solid rgba(245,158,11,.3)}
+.rate-btn.hard:hover{background:rgba(245,158,11,.2)}
+.rate-btn.good{background:rgba(0,212,255,.1);color:var(--accent);border:1px solid rgba(0,212,255,.3)}
+.rate-btn.good:hover{background:rgba(0,212,255,.2)}
+.rate-btn.easy{background:rgba(16,185,129,.1);color:var(--green);border:1px solid rgba(16,185,129,.3)}
+.rate-btn.easy:hover{background:rgba(16,185,129,.2)}
+.rating-area.hidden{display:none}
+
+/* FLIP HINT */
+.flip-hint-area{padding:16px 24px;text-align:center;border-top:1px solid var(--border)}
+.flip-hint{font-size:12px;color:var(--muted)}
+.flip-hint button{background:none;border:1px solid var(--border);border-radius:8px;padding:10px 24px;color:var(--accent);font-family:var(--mono);font-size:13px;cursor:pointer;transition:all .2s;margin-top:8px;display:block;width:100%;max-width:200px;margin:8px auto 0}
+.flip-hint button:hover{background:rgba(0,212,255,.08)}
+.flip-hint-area.hidden{display:none}
+
+/* ===== SCREEN 3: COMPLETE ===== */
+#complete{align-items:center;justify-content:center;padding:40px 24px;text-align:center}
+.complete-icon{font-size:72px;margin-bottom:20px;display:block;animation:bounce .6s ease}
+@keyframes bounce{0%,100%{transform:scale(1)}50%{transform:scale(1.15)}}
+.complete-title{font-family:var(--display);font-size:32px;font-weight:800;color:#fff;margin-bottom:8px}
+.complete-sub{font-size:13px;color:var(--muted);margin-bottom:32px;line-height:1.7}
+.results-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;width:100%;max-width:360px;margin-bottom:32px}
+.result-box{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center}
+.result-val{font-family:var(--display);font-size:28px;font-weight:800;margin-bottom:4px}
+.result-val.green{color:var(--green)}
+.result-val.yellow{color:var(--yellow)}
+.result-val.red{color:var(--red)}
+.result-val.blue{color:var(--accent)}
+.result-label{font-size:10px;color:var(--muted);letter-spacing:.15em;text-transform:uppercase}
+.complete-btns{display:flex;flex-direction:column;gap:10px;width:100%;max-width:300px}
+.cbtn{border:none;border-radius:10px;padding:14px 24px;font-family:var(--display);font-size:15px;font-weight:700;cursor:pointer;transition:all .2s}
+.cbtn.primary{background:var(--accent);color:var(--bg)}
+.cbtn.primary:hover{opacity:.85}
+.cbtn.secondary{background:transparent;border:1px solid var(--border);color:var(--text)}
+.cbtn.secondary:hover{border-color:var(--accent);color:var(--accent)}
+
+/* TOAST */
+.toast{position:fixed;bottom:100px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px 20px;font-size:12px;color:var(--text);opacity:0;transition:all .3s;z-index:100;pointer-events:none;white-space:nowrap}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.flip-face{animation:fadeIn .2s ease}
+</style>
+</head>
+<body>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- ===== SCREEN 1: HOME ===== -->
+<div class="screen active" id="home">
+  <div class="home-badge">ISEF 2026 · Scarlett Asselta</div>
+  <div class="home-title">
+    <div class="line1">Flashcard</div>
+    <div class="line2">Defense Lab</div>
+  </div>
+  <div class="home-sub">Master every concept, formula, and judge question. Rate each card — missed cards come back around.</div>
+
+  <div class="stats-row">
+    <div class="stat"><div class="stat-val" id="stat-mastered">0</div><div class="stat-label">Mastered</div></div>
+    <div class="stat"><div class="stat-val" id="stat-learning">0</div><div class="stat-label">Learning</div></div>
+    <div class="stat"><div class="stat-val" id="stat-total">0</div><div class="stat-label">Total</div></div>
+  </div>
+
+  <button class="review-btn" id="review-btn" onclick="startReview()">🔁 Review Missed Cards</button>
+
+  <div class="deck-grid" id="deck-grid"></div>
+</div>
+
+<!-- ===== SCREEN 2: STUDY ===== -->
+<div class="screen" id="study">
+  <div class="study-header">
+    <button class="back-btn" onclick="goHome()">← Back</button>
+    <div class="study-info">
+      <div class="study-deck-name" id="study-deck-name">Deck</div>
+      <div class="study-progress-text" id="study-prog-text">Card 1 of 10</div>
+      <div class="study-prog-track"><div class="study-prog-fill" id="study-prog-fill"></div></div>
+    </div>
+  </div>
+
+  <div class="card-area" id="card-area">
+    <div class="flip-wrap" id="flip-wrap" onclick="flipCard()">
+      <div class="flip-inner" id="flip-inner">
+        <div class="flip-face flip-front" id="flip-front">
+          <div class="card-category" id="card-cat">Category</div>
+          <div class="card-question" id="card-q">Question text</div>
+          <div class="tap-hint">Tap to reveal answer</div>
+        </div>
+        <div class="flip-face flip-back" id="flip-back">
+          <div class="card-answer-label">Answer</div>
+          <div class="card-answer" id="card-a">Answer text</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="flip-hint-area" id="flip-hint-area">
+    <div class="flip-hint">
+      <button onclick="flipCard()">Reveal Answer</button>
+    </div>
+  </div>
+
+  <div class="rating-area hidden" id="rating-area">
+    <div style="width:100%"><div class="rating-label">How well did you know this?</div></div>
+    <button class="rate-btn again" onclick="rate(0)"><span class="rate-icon">❌</span><span class="rate-text">Again</span></button>
+    <button class="rate-btn hard" onclick="rate(1)"><span class="rate-icon">😬</span><span class="rate-text">Hard</span></button>
+    <button class="rate-btn good" onclick="rate(2)"><span class="rate-icon">👍</span><span class="rate-text">Good</span></button>
+    <button class="rate-btn easy" onclick="rate(3)"><span class="rate-icon">⚡</span><span class="rate-text">Easy</span></button>
+  </div>
+</div>
+
+<!-- ===== SCREEN 3: COMPLETE ===== -->
+<div class="screen" id="complete">
+  <span class="complete-icon">🎉</span>
+  <div class="complete-title" id="complete-title">Deck Complete!</div>
+  <div class="complete-sub" id="complete-sub">Here's how you did:</div>
+  <div class="results-grid" id="results-grid"></div>
+  <div class="complete-btns">
+    <button class="cbtn primary" id="retry-missed-btn" onclick="retryMissed()">🔁 Retry Missed Cards</button>
+    <button class="cbtn secondary" onclick="goHome()">← Back to Decks</button>
+  </div>
+</div>
+
+<script>
+// ===========================
+// ALL FLASHCARD DATA
+// ===========================
+var DECKS = [
+  {
+    id:0, name:'Big Picture', icon:'🌍', color:'d0',
+    cards:[
+      {
+        cat:'Project Identity',
+        q:'In one sentence: what is the primary scientific contribution of this project?',
+        a:'A <strong>computational engine</strong> that uses wound geometry and simulated strain to score scaffold architectures algorithmically — validated against physical pore retention at the level of individual pores. The scaffolds test the engine; the engine is the contribution.'
+      },
+      {
+        cat:'Category Justification',
+        q:'Why is this project in Math & Computational Sciences, not Biomedical Engineering?',
+        a:'The primary contribution IS the algorithm: boundary extraction, Hat monotile tiling using recursive metatile substitution, finite difference strain simulation, multi-metric scoring with sensitivity analysis, and hybrid scaffold generation using k-means clustering. Physical testing validates the model — it is not the model itself.'
+      },
+      {
+        cat:'The Pipeline',
+        q:'Name all 8 modules in order.',
+        a:'<strong>1</strong> Boundary extraction → <strong>2</strong> Boundary features → <strong>3</strong> Hat monotile → <strong>4</strong> Periodic lattices → <strong>5</strong> Strain map → <strong>6</strong> Scoring engine → <strong>7</strong> Hybrid scaffold → <strong>8</strong> Grasshopper STL export'
+      },
+      {
+        cat:'Key Numbers',
+        q:'What are the key output numbers you must know cold?',
+        a:'<div class="formula">Wound area: 5040.8 mm²\nBoundary points: 1548\nStrain grid interior points: 5036\nHat pore diameter: 3.91 mm\nTarget pore range: 3–5 mm\nScaffold thickness: 2.5 mm\nReplicates per group: n=3 (18 total)</div>'
+      },
+      {
+        cat:'Problem Statement',
+        q:'What goes wrong with periodic scaffolds under strain?',
+        a:'Identical unit cells deform identically — causing <strong>pore collapse in high-strain zones</strong> and <strong>wasted material in low-strain zones</strong>. No geometric variation means no ability to distribute strain differentially. One weak point = every weak point.'
+      },
+      {
+        cat:'Clinical Relevance',
+        q:'You have no live cells. How is this project clinically relevant?',
+        a:'The mathematical principles governing pore retention under strain are <strong>material-independent</strong>. If the engine correctly predicts which geometry handles strain best, that prediction holds whether the material is TPU, PCL, or collagen. TPU is a validation substrate. Clinical and cell validation are future work (Section 13.3).'
+      }
+    ]
+  },
+  {
+    id:1, name:'Math & Physics', icon:'📐', color:'d1',
+    cards:[
+      {
+        cat:'Airy Stress Function',
+        q:'What is the Airy stress function φ and why does it matter?',
+        a:'A single scalar function from which all three stress components can be derived:\n<div class="formula">σ_xx = d²φ/dy²\nσ_yy = d²φ/dx²\nτ_xy = −d²φ/dxdy</div>Instead of solving 3 coupled unknowns at every point, you solve 1 function φ everywhere — then differentiate. Airy\'s insight from 1862.'
+      },
+      {
+        cat:'Biharmonic Equation',
+        q:'What is the biharmonic equation and what does it physically mean?',
+        a:'<div class="formula">∇⁴φ = 0\n= d⁴φ/dx⁴ + 2·d⁴φ/dx²dy² + d⁴φ/dy⁴ = 0</div>Physically: φ cannot curve too aggressively in any direction. This constraint encodes the <strong>laws of elastic equilibrium</strong> — that internal forces must sum to zero everywhere. It selects the physically meaningful solution.'
+      },
+      {
+        cat:'The 13-Point Stencil',
+        q:'What are the coefficients of the biharmonic finite difference stencil?',
+        a:'<div class="formula">Center point:              +20\nFace neighbors (dist 1):   −8 each (×4)\nDiagonal neighbors:        +2 each (×4)\nFar face neighbors (dist 2): +1 each (×4)</div><div class="key">These come from applying the finite difference second-derivative formula twice in both x and y directions and collecting all terms.</div>'
+      },
+      {
+        cat:'Von Mises Stress',
+        q:'Write the von Mises stress formula and explain why you use it instead of maximum principal stress.',
+        a:'<div class="formula">σ_vm = √(σ_xx² − σ_xx·σ_yy + σ_yy² + 3·τ_xy²)</div>Von Mises captures the total <strong>distortional energy</strong> from ALL stress components including shear. Max principal stress only captures the largest single component. For a scaffold pore loaded from any direction, von Mises measures total mechanical demand regardless of direction. Von Mises (1913).'
+      },
+      {
+        cat:'Counterintuitive Fact',
+        q:'Why does σ_xx use the Y-direction second derivative of φ (not X)?',
+        a:'This is how the Airy stress function is mathematically <strong>defined</strong> — the horizontal stress component is the second derivative of φ in the perpendicular (Y) direction. This follows from deriving compatibility equations for a 2D elastic body. It is counterintuitive but provably correct. Source: Timoshenko & Goodier (1951) Theory of Elasticity.'
+      },
+      {
+        cat:'Spearman vs Pearson',
+        q:'Why use Spearman rank correlation instead of Pearson for validating the engine?',
+        a:'Two reasons: (1) S scores are <strong>composite weighted ranks</strong>, not continuous measurements — Spearman measures monotonic relationships, which is the right claim. (2) Pore retention % may not be normally distributed, and Spearman makes no distributional assumptions. If both were normal and linear, both would give identical results.'
+      },
+      {
+        cat:'Normalization',
+        q:'Why are all von Mises values normalized to 0–1 before saving to strain_grid.csv?',
+        a:'The absolute values of φ depend on arbitrary boundary condition scales. Normalization removes this scale factor so values are <strong>comparable across all three scenarios</strong> and all scaffold geometries. When Module 6 reads strain_mean, all values need to be on the same playing field for the SC metric calculation.'
+      },
+      {
+        cat:'Interpolation',
+        q:'A pore centroid is at (27.4mm, 50.7mm). The grid has values only at integer positions. How does the interpolator get a strain value there?',
+        a:'<strong>RegularGridInterpolator</strong> uses bilinear interpolation — it finds the four surrounding grid points: (27,50), (28,50), (27,51), (28,51), then computes a weighted average based on proximity. 0.4mm from x=27 toward x=28 means 40% weight on the x=28 values, 60% on x=27 values. Same logic in y.'
+      }
+    ]
+  },
+  {
+    id:2, name:'Hat Monotile', icon:'🔷', color:'d2',
+    cards:[
+      {
+        cat:'Definition',
+        q:'What is the Hat monotile and what makes it mathematically unique?',
+        a:'The Hat is a <strong>13-sided polygon</strong> that tiles the entire plane using geometry alone with NO matching rules required. It is the world\'s first true <em>aperiodic monotile</em> — proven by Smith, Myers, Kaplan, Goodman-Strauss in Combinatorial Theory, June 2024.\n<div class="key">Aperiodic = the pattern NEVER repeats. No unit cell. No translational symmetry. Proven mathematically.</div>'
+      },
+      {
+        cat:'Aperiodicity',
+        q:'What does "aperiodic" mean and why does it matter for scaffold design?',
+        a:'Aperiodic means <strong>no translational periodicity</strong> — the pattern never repeats no matter how far you extend it. For scaffolds: in periodic designs, one failure propagates predictably to every identical cell. In an aperiodic tiling, each region has different local geometry, potentially <strong>interrupting crack propagation and strain concentration</strong>.'
+      },
+      {
+        cat:'Implementation',
+        q:'What implementation method did you use for the Hat tiling and why?',
+        a:'<strong>Recursive H/T/P/F metatile substitution</strong> — the mathematically correct approach from the primary Smith et al. paper. Starting from initial metatiles, each level subdivides into smaller tiles, generating the aperiodic pattern at any scale.\n<div class="formula">SCALE = 2.6 mm/unit\nSTRUT_WIDTH = 0.9 mm\nNODE_RATIO = 1.5\nSUBSTITUTION_LEVELS = 4\nResult: 3.91 mm mean pore diameter ✅</div>'
+      },
+      {
+        cat:'Node Merging',
+        q:'What is node merging and why is it critical for the Hat scaffold?',
+        a:'At tile junctions where 3+ edges meet at angles &lt;45°, <strong>razor-thin geometry</strong> forms that will fail during FDM printing. The code identifies all such junctions and replaces thin strut endpoints with merged circular nodes of diameter = <strong>1.5 × strut_width</strong>. This preserves aperiodic geometry while making it physically printable.'
+      },
+      {
+        cat:'Mirror Tiles',
+        q:'The Hat requires both a tile and its mirror image. Does that violate the "single tile" claim?',
+        a:'This is the correct Hat behavior — both Hat and anti-Hat (mirror) orientations are required for a valid tiling. The <strong>Spectre tile</strong> (Sept 2024 by the same authors) is the true chiral aperiodic monotile that tiles WITHOUT reflections. The Spectre is listed as future work in Section 13.3. My implementation correctly includes both orientations.'
+      },
+      {
+        cat:'Scientific Support',
+        q:'What 2025 paper supports using aperiodic geometry in structural applications?',
+        a:'<strong>Rosa et al., Advanced Materials, 2025</strong> (ETH Zurich) showed that quasicrystalline lattice architectures (Penrose tiling) outperform periodic designs in distributing strain without global buckling instabilities.\n<div class="key">This is your go-to citation when judges challenge the scientific rationale for the Hat scaffold. The Hat\'s quasiperiodic C6 symmetry (Socolar 2023) links it directly to this work.</div>'
+      },
+      {
+        cat:'Module 6 Result',
+        q:'How did the Hat Monotile rank in the scoring engine? What drove the ranking?',
+        a:'<strong>#2 of 5 scaffolds</strong> with S = 0.6201, behind only Rotating Squares (0.6407).\n<div class="formula">Key drivers:\nBF (Boundary Fit): best of all groups\nPU (Pore Uniformity): best of all groups\nSC (Strain Compat.): strong\nPR: lower (no theoretical ν)</div>The Hat outperformed ALL periodic auxetic designs on boundary fit and pore uniformity despite being the most geometrically complex.'
+      }
+    ]
+  },
+  {
+    id:3, name:'Auxetics & Scoring', icon:'⚡', color:'d3',
+    cards:[
+      {
+        cat:'Poisson\'s Ratio',
+        q:'What is Poisson\'s ratio and why does negative ν matter for scaffolds?',
+        a:'Poisson\'s ratio (ν) describes lateral behavior under longitudinal strain. Normal materials narrow when stretched (ν > 0). <strong>Auxetic materials expand laterally</strong> when stretched (ν < 0).\n<div class="key">For scaffolds: normal ν means pores collapse under tension. Negative ν means pores OPEN, maintaining space for cell infiltration. This is why PR_pred (based on −ν) gets 30% weight.</div>'
+      },
+      {
+        cat:'Formula',
+        q:'Write the Poisson\'s ratio formula for re-entrant honeycomb from Lvov et al. 2020.',
+        a:'<div class="formula">ν = −sin²(θ) / (α − cosθ)·cosθ\n\nα = h/l = 2.0\nh = 8.0 mm (horizontal strut)\nl = 4.0 mm (inclined strut)\nt = 1.0 mm (strut thickness)</div>Group 2 (θ=55°): ν ≈ −0.50\nGroup 3 (θ=70°): ν ≈ −1.20'
+      },
+      {
+        cat:'HC70 Paradox',
+        q:'HC70 has a stronger auxetic effect (ν=−1.20) than HC55 (ν=−0.50), yet it ranks LAST. Explain.',
+        a:'HC70 ranked last due to <strong>lowest pore uniformity</strong> (PU = 0.473 raw). The stronger rib angle creates more variable pore geometry when clipped to an irregular wound boundary — edge pores are compressed while interior pores remain large.\n<div class="key">This is the engine\'s KEY finding: stronger auxetic effect ≠ better scaffold geometry. A human designer would likely select HC70 assuming it\'s best. The engine correctly identifies the trade-off.</div>'
+      },
+      {
+        cat:'Scoring Formula',
+        q:'Write the complete scoring formula S with all weights.',
+        a:'<div class="formula">S = 0.30·PR + 0.20·BF + 0.15·PU\n    + 0.20·SC + 0.10·M + 0.05·StC\n\nPR: Pore Retention (−ν)\nBF: Boundary Fit (covered/wound area)\nPU: Pore Uniformity (1−σ/μ)\nSC: Strain Compatibility (1−mean strain)\nM:  Manufacturability (erosion test)\nStC: Structural Continuity (connected %)</div>'
+      },
+      {
+        cat:'Final Rankings',
+        q:'State the final Module 6 rankings from #1 to #5 with S scores.',
+        a:'<div class="formula">#1 Rotating Squares:  S = 0.6407\n#2 Hat Monotile:      S = 0.6201\n#3 Re-entrant HC 55°: S = 0.5613\n#4 Square (Control):  S = 0.3792\n#5 Re-entrant HC 70°: S = 0.3648</div><div class="key">Predicted physical ranking for Spearman validation: G4 > G5 > G2 > G1 > G3</div>'
+      },
+      {
+        cat:'Weight Justification',
+        q:'How do you justify the scoring weights to a judge?',
+        a:'Three levels of justification:\n<strong>1. Literature</strong>: pore retention is the dominant scaffold metric (30% weight). Boundary fit and strain compatibility both get 20% for spatial matching.\n<strong>2. Sensitivity analysis</strong>: ranking stable in 7/11 perturbations (±0.10 each weight).\n<strong>3. Empirical</strong>: the pore-level Spearman correlation — if the function captures the right signal, it will be significant regardless of exact weights.'
+      },
+      {
+        cat:'Sensitivity Analysis',
+        q:'What did the weight sensitivity analysis find?',
+        a:'12 perturbations tested (6 metrics × ±0.10). Ranking was stable in <strong>7/11 perturbations (64%)</strong>. Instability occurs mainly when PR or M weights are shifted significantly.\n<div class="key">Sensitivity = 64% is the honest answer. Don\'t round up. The empirical Spearman correlation is the stronger validation argument — use both together.</div>'
+      }
+    ]
+  },
+  {
+    id:4, name:'Statistics', icon:'📊', color:'d4',
+    cards:[
+      {
+        cat:'Primary Statistic',
+        q:'What is the primary validation statistic and why is it more powerful than ANOVA?',
+        a:'<strong>ρ_pore</strong> — the pore-level Spearman correlation between engine-predicted local porosity and physically measured pore retention, with <strong>n &gt; 200</strong> individual pores across all 18 scaffolds.\n<div class="key">This is not affected by per-group sample size (n=3). Most scoring engine papers validate at scaffold level (n=5-6). Pore-level validation at n>200 is orders of magnitude more precise.</div>'
+      },
+      {
+        cat:'Two Correlations',
+        q:'What is the difference between ρ_pore and ρ_group?',
+        a:'<strong>ρ_pore</strong> (PRIMARY): every individual pore across all 18 scaffolds vs engine prediction. n &gt; 200. Tests predictive precision at pore level.\n<strong>ρ_group</strong> (secondary): mean pore retention per group (n=6) vs S score ranking. n = 6. Confirmatory only.\n<div class="key">Even if ρ_group is non-significant (possible with n=6), a significant ρ_pore is the headline claim and stands alone.</div>'
+      },
+      {
+        cat:'ANOVA',
+        q:'Non-significant ANOVA (p=0.08). Does this invalidate the project?',
+        a:'No. ANOVA is a <strong>secondary analysis</strong> with n=3 per group (~65-70% power for large effects). A non-significant result is consistent with the power analysis — it is a documented limitation, not a null result.\n<div class="key">The PRIMARY result is ρ_pore with n>200, which is completely unaffected by group sample size. Shift emphasis there immediately if a judge raises this.</div>'
+      },
+      {
+        cat:'Effect Size',
+        q:'What is η² and what threshold indicates a large effect?',
+        a:'Eta-squared: <strong>η² = SS_between / SS_total</strong>\nInterpretation:\n<div class="formula">η² > 0.01: small effect\nη² > 0.06: medium effect\nη² > 0.14: large effect ← your target</div>Report alongside p-values to show <em>practical significance</em>, not just statistical significance. A large η² with p>0.05 at n=3 is still meaningful — it tells you the effect is real but the study is underpowered to detect it.'
+      },
+      {
+        cat:'Power Analysis',
+        q:'Why is n=3 per group a deliberate choice, not an oversight?',
+        a:'A priori power analysis (scipy.stats) shows n=3 achieves <strong>~65-70% power</strong> for large effects (η²>0.14) at α=0.05. This is a documented trade-off between fabrication cost (18 scaffolds already) and statistical power.\n<div class="key">Judges appreciate that you ran the power analysis BEFORE the experiment. It shows n=3 was a reasoned decision with known limitations, not a mistake.</div>'
+      },
+      {
+        cat:'Falsifiability',
+        q:'What result would FALSIFY your central claim?',
+        a:'If <strong>ρ_pore is near zero or negative</strong> — meaning the engine\'s porosity predictions have no relationship to actual pore retention. That would mean the scoring metrics don\'t capture the right physical signals.\n<div class="key">This is still a scientifically valid contribution — identifying which metrics are non-predictive informs future scoring engine design. Science can\'t be falsified by a judge who thinks it\'s too good to be true.</div>'
+      }
+    ]
+  },
+  {
+    id:5, name:'Judge Defense', icon:'👩‍⚖️', color:'d5',
+    cards:[
+      {
+        cat:'Hard Judge Question',
+        q:'JUDGE: "Your model ignores viscoelasticity, nonlinearity, and material heterogeneity. How can you trust it?"',
+        a:'The Airy stress function provides a <strong>first-order approximation</strong> that is physically grounded and computationally tractable. What matters for scaffold design is the <em>relative</em> stress distribution — which regions are high vs low stress — not absolute magnitudes. A linear elastic model is sufficient to distinguish boundary-concentrated from interior-diffuse stress. Full FEA is explicitly listed as future work. This is a scientifically honest scope limitation.'
+      },
+      {
+        cat:'Hard Judge Question',
+        q:'JUDGE: "Topology optimization of scaffolds already exists — Liu et al. 2025 got 39% improvement. What does your project add?"',
+        a:'Three distinct contributions: (1) The <strong>Hat monotile</strong>, an aperiodic geometry never previously characterized in any scaffold application; (2) <strong>Patient-specific wound geometry</strong> as a direct input, making design adaptive rather than generic; (3) <strong>Pore-level empirical validation</strong> (n>200) of the computational predictions against physical measurements — providing ground-truth calibration that most engine papers lack. These complement, not compete with, Liu et al.'
+      },
+      {
+        cat:'Hard Judge Question',
+        q:'JUDGE: "Walk me through exactly how the strain map connects to the final scaffold ranking."',
+        a:'Module 5 produces strain_grid.csv with a <strong>0–1 stress value at each of 5036 interior grid points</strong>. Module 6 creates a RegularGridInterpolator from this grid. For each scaffold, it looks up the strain at each pore\'s centroid coordinates. SC = 1 − mean(those strain values). Higher SC = pores in lower-stress regions. SC contributes <strong>20% of score S</strong>, which determines the ranking.'
+      },
+      {
+        cat:'Hard Judge Question',
+        q:'JUDGE: "Your wound phantom is foam — not a real wound. How is it representative?"',
+        a:'The phantom was <strong>deliberately designed</strong> with three geometric features: a narrow region, a high-curvature region, and a wide irregular region. These activate all three zone types the hybrid generator distinguishes. A circular wound wouldn\'t exercise boundary feature computation meaningfully. The goal is to validate the algorithm on geometric complexity — in deployment, any wound image feeds into the same pipeline.'
+      },
+      {
+        cat:'Hard Judge Question',
+        q:'JUDGE: "Why is k=5 zones in the hybrid scaffold? Why not k=3 or k=7?"',
+        a:'k=5 matches the number of available scaffold motifs (Groups 1–5), so every motif has an opportunity to be assigned. With k=3, some motifs would never be selected. With k=7, zones would be smaller than individual scaffold cells, making motif assignment geometrically meaningless.\n<div class="key">Future work: elbow method or silhouette analysis to optimize k for each wound shape — valid methodological improvement to propose.</div>'
+      },
+      {
+        cat:'Hard Judge Question',
+        q:'JUDGE: "If you had more resources, what would you do differently?"',
+        a:'Three things: (1) <strong>Full FEA</strong> in Ansys to replace Airy stress approximation — captures viscoelasticity and geometric nonlinearity. (2) <strong>PCL or PLGA printing</strong> instead of TPU to match clinical scaffold materials. (3) <strong>Fibroblast cell culture</strong> on printed scaffolds to validate that pore retention under loading actually correlates with cell survival and proliferation. All three are in Section 13.3 of the research plan.'
+      },
+      {
+        cat:'Hard Judge Question',
+        q:'JUDGE: "What is the most important number in your entire project?"',
+        a:'<strong>ρ_pore</strong> — the pore-level Spearman correlation coefficient between the engine\'s predicted porosity and physically measured pore retention.\n<div class="key">This is the answer because it is the only number that directly validates whether the entire computational pipeline — all 8 modules — actually predicts physical reality. Every other number in the project is either an input to this test or a secondary result.</div>'
+      },
+      {
+        cat:'Opening Statement',
+        q:'Practice: deliver a 30-second project summary for a judge who knows nothing.',
+        a:'<div class="key">Model answer to rehearse:\n\n"Skin scaffolds need to handle irregular wound shapes and changing strain during healing. Most scaffold designs use simple repeating patterns that don\'t adapt to local stress. I built a computational engine that takes a wound boundary, simulates the strain field inside it using the Airy stress function, and scores scaffold geometries on six metrics. I also tested the Hat monotile — the world\'s first aperiodic single tile — as a scaffold geometry for the first time. The engine ranked five scaffolds, and I\'m validating those rankings by correlating the predictions against physical pore retention measurements."</div>'
+      }
+    ]
+  }
+];
+
+// ===========================
+// STATE
+// ===========================
+var state = {
+  scores: {},    // cardId -> 0(again) 1(hard) 2(good) 3(easy)
+  currentDeck: null,
+  currentCards: [],
+  cardIndex: 0,
+  isFlipped: false,
+  sessionResults: { again:0, hard:0, good:0, easy:0 }
+};
+
+// Generate unique card IDs
+DECKS.forEach(function(deck){
+  deck.cards.forEach(function(card, ci){
+    card.id = 'd'+deck.id+'c'+ci;
+  });
+});
+
+var totalCards = DECKS.reduce(function(sum,d){return sum+d.cards.length},0);
+
+// ===========================
+// HOME SCREEN
+// ===========================
+function buildHome(){
+  var mastered = Object.values(state.scores).filter(function(s){return s>=3}).length;
+  var learning = Object.values(state.scores).filter(function(s){return s>0&&s<3}).length;
+  document.getElementById('stat-mastered').textContent = mastered;
+  document.getElementById('stat-learning').textContent = learning;
+  document.getElementById('stat-total').textContent = totalCards;
+
+  // Show review button if any missed
+  var missed = getMissedCards();
+  var rb = document.getElementById('review-btn');
+  if(missed.length > 0){
+    rb.style.display='block';
+    rb.textContent = '🔁 Review '+missed.length+' Missed Cards';
+  } else {
+    rb.style.display='none';
+  }
+
+  var grid = document.getElementById('deck-grid');
+  grid.innerHTML='';
+  DECKS.forEach(function(deck){
+    var done = deck.cards.filter(function(c){return state.scores[c.id]>=3}).length;
+    var pct = Math.round(done/deck.cards.length*100);
+    var div = document.createElement('div');
+    div.className='deck-card '+deck.color;
+    div.innerHTML='<span class="deck-icon">'+deck.icon+'</span><div class="deck-name">'+deck.name+'</div><div class="deck-count">'+deck.cards.length+' cards · '+done+' mastered</div><div class="deck-prog"><div class="deck-prog-fill" style="width:'+pct+'%"></div></div>';
+    div.addEventListener('click',function(){startDeck(deck.id)});
+    grid.appendChild(div);
+  });
+}
+
+function getMissedCards(){
+  var missed=[];
+  DECKS.forEach(function(deck){
+    deck.cards.forEach(function(card){
+      if(state.scores[card.id]===0) missed.push(card);
+    });
+  });
+  return missed;
+}
+
+// ===========================
+// STUDY SESSION
+// ===========================
+function startDeck(deckId){
+  var deck = DECKS[deckId];
+  state.currentDeck = deck;
+  // Prioritize: unseen first, then again, then hard, then good, then easy
+  var unseen = deck.cards.filter(function(c){return state.scores[c.id]===undefined});
+  var again  = deck.cards.filter(function(c){return state.scores[c.id]===0});
+  var hard   = deck.cards.filter(function(c){return state.scores[c.id]===1});
+  var good   = deck.cards.filter(function(c){return state.scores[c.id]===2});
+  var easy   = deck.cards.filter(function(c){return state.scores[c.id]===3});
+  state.currentCards = unseen.concat(again).concat(hard).concat(good).concat(easy);
+  state.cardIndex = 0;
+  state.sessionResults = {again:0,hard:0,good:0,easy:0};
+  showScreen('study');
+  loadCard();
+}
+
+function startReview(){
+  var missed = getMissedCards();
+  state.currentDeck = {name:'Review: Missed Cards', id:'review'};
+  state.currentCards = missed;
+  state.cardIndex = 0;
+  state.sessionResults = {again:0,hard:0,good:0,easy:0};
+  showScreen('study');
+  loadCard();
+}
+
+function loadCard(){
+  if(state.cardIndex >= state.currentCards.length){
+    showComplete();
+    return;
+  }
+  var card = state.currentCards[state.cardIndex];
+  var total = state.currentCards.length;
+
+  document.getElementById('study-deck-name').textContent = state.currentDeck.name;
+  document.getElementById('study-prog-text').textContent = 'Card '+(state.cardIndex+1)+' of '+total;
+  document.getElementById('study-prog-fill').style.width = (state.cardIndex/total*100)+'%';
+  document.getElementById('card-cat').textContent = card.cat;
+  document.getElementById('card-q').textContent = card.q;
+  document.getElementById('card-a').innerHTML = card.a;
+
+  // Reset flip state
+  state.isFlipped = false;
+  document.getElementById('flip-wrap').classList.remove('flipped');
+  document.getElementById('rating-area').classList.add('hidden');
+  document.getElementById('flip-hint-area').classList.remove('hidden');
+}
+
+function flipCard(){
+  if(state.isFlipped) return;
+  state.isFlipped = true;
+  document.getElementById('flip-wrap').classList.add('flipped');
+  document.getElementById('rating-area').classList.remove('hidden');
+  document.getElementById('flip-hint-area').classList.add('hidden');
+}
+
+function rate(score){
+  var labels=['again','hard','good','easy'];
+  state.sessionResults[labels[score]]++;
+  var card = state.currentCards[state.cardIndex];
+  state.scores[card.id] = score;
+  saveState();
+
+  // If "again" or "hard", add card back to end of queue
+  if(score <= 1){
+    state.currentCards.push(card);
+  }
+
+  state.cardIndex++;
+
+  // Brief flash feedback
+  var colors=['#ef4444','#f59e0b','#00d4ff','#10b981'];
+  var msgs=['Coming back around ↩','Almost there 😬','Nice 👍','Mastered ⚡'];
+  showToast(msgs[score]);
+
+  setTimeout(function(){loadCard()}, 300);
+}
+
+// ===========================
+// COMPLETE SCREEN
+// ===========================
+function showComplete(){
+  var r = state.sessionResults;
+  var total = r.again+r.hard+r.good+r.easy;
+  var known = r.good+r.easy;
+  var pct = total>0?Math.round(known/total*100):0;
+
+  document.getElementById('complete-title').textContent = state.currentDeck.name+' — Done!';
+  document.getElementById('complete-sub').textContent = 'Session complete. Here\'s how you did:';
+
+  var grid = document.getElementById('results-grid');
+  grid.innerHTML='';
+  var items=[
+    {val:r.easy,  label:'Easy',   cls:'green'},
+    {val:r.good,  label:'Good',   cls:'blue'},
+    {val:r.hard,  label:'Hard',   cls:'yellow'},
+    {val:r.again, label:'Again',  cls:'red'},
+  ];
+  items.forEach(function(item){
+    var box=document.createElement('div');
+    box.className='result-box';
+    box.innerHTML='<div class="result-val '+item.cls+'">'+item.val+'</div><div class="result-label">'+item.label+'</div>';
+    grid.appendChild(box);
+  });
+
+  var missedNow = getMissedCards();
+  var retryBtn = document.getElementById('retry-missed-btn');
+  if(missedNow.length>0){
+    retryBtn.style.display='block';
+    retryBtn.textContent='🔁 Retry '+missedNow.length+' Missed Cards';
+  } else {
+    retryBtn.style.display='none';
+  }
+
+  showScreen('complete');
+}
+
+function retryMissed(){
+  startReview();
+}
+
+// ===========================
+// NAVIGATION
+// ===========================
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(function(s){s.classList.remove('active')});
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0,0);
+}
+
+function goHome(){
+  showScreen('home');
+  buildHome();
+}
+
+// ===========================
+// PERSISTENCE
+// ===========================
+function saveState(){
+  try{localStorage.setItem('isef_fc_scores',JSON.stringify(state.scores))}catch(e){}
+}
+function loadState(){
+  try{
+    var s=localStorage.getItem('isef_fc_scores');
+    if(s) state.scores=JSON.parse(s);
+  }catch(e){}
+}
+
+// ===========================
+// TOAST
+// ===========================
+function showToast(msg){
+  var t=document.getElementById('toast');
+  t.textContent=msg;
+  t.classList.add('show');
+  setTimeout(function(){t.classList.remove('show')},1500);
+}
+
+// ===========================
+// INIT
+// ===========================
+loadState();
+buildHome();
+</script>
+</body>
+</html>
